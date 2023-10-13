@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "django-secrets-fields"
+version = "0.0.1"
+description = "Django encrypted model field that fetches the value from multiple sources"
+authors = ["Ryan shaw <ryan.shaw@min.vc>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "secrets_fields"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+django = ">3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
