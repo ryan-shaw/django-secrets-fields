@@ -2,10 +2,22 @@
 Django encrypted model field that fetches the value from AWS Secrets Manager
 """
 
+import time
 import django.db.models
-from django import forms
-from django.conf import settings
-from .util import get_client
+from .util import get_backend
+from dataclasses import dataclass
+
+backend = get_backend()
+
+TTL = 30
+
+cache = {}
+
+
+@dataclass
+class Cache:
+    ttl: int
+    value: str
 
 
 class Secret:
@@ -13,15 +25,18 @@ class Secret:
         self.secret = secret
 
     def get(self):
-        # fetch from secrets manager
-        role_arn = getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RO", None)
-        client = get_client(role_arn=role_arn)
-        try:
-            secret = client.get_secret_value(SecretId=self.secret)
-        except Exception as e:
-            return str(e)
+        obj = cache.get(self.secret, None)
+        if obj:
+            if obj.ttl > time.time():
+                return obj.value
+            else:
+                del cache[self.secret]
 
-        return secret["SecretString"]
+        plaintext = backend.get_secret(self.secret)
+
+        # cache the value
+        cache[self.secret] = Cache(ttl=time.time() + TTL, value=plaintext)
+        return plaintext
 
     def ciphertext(self):
         return self.secret

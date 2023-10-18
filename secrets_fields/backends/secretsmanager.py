@@ -1,7 +1,6 @@
 import boto3
 from .backends import BaseSecretsBackend
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 
 
 class SecretsManagerBackend(BaseSecretsBackend):
@@ -10,9 +9,17 @@ class SecretsManagerBackend(BaseSecretsBackend):
     Uses AWS Secrets Manager to store secrets
     """
 
-    def __init__(self):
-        role_arn = getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RO", None)
-        self.client = _get_client(role_arn=role_arn)
+    @property
+    def client_ro(self):
+        return _get_client(
+            role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RO", None)
+        )
+
+    @property
+    def client_rw(self):
+        return _get_client(
+            role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RW", None)
+        )
 
     def create_secret(self, secret_name: str, secret_value: str):
         """Create secret using the backend
@@ -21,7 +28,11 @@ class SecretsManagerBackend(BaseSecretsBackend):
             secret_name (str): name of the secret
             secret_value (str): plaintext secret
         """
-        self.client.create_secret(Name=secret_name, SecretString=secret_value)
+        self.client_rw.create_secret(
+            Name=secret_name,
+            SecretString=secret_value,
+            Tags=[{"Key": "Managed-By", "Value": "django-secrets-fields"}],
+        )
 
     def get_secret(self, secret_name: str) -> str:
         """Get secret from backend
@@ -32,7 +43,7 @@ class SecretsManagerBackend(BaseSecretsBackend):
         Returns:
             str: plaintext secret
         """
-        return self.client.get_secret_value(SecretId=secret_name)["SecretString"]
+        return self.client_ro.get_secret_value(SecretId=secret_name)["SecretString"]
 
 
 def _get_client(role_arn: str = None) -> boto3.client:
@@ -51,11 +62,3 @@ def _get_client(role_arn: str = None) -> boto3.client:
         return session.client("secretsmanager")
     else:
         return boto3.client("secretsmanager")
-
-
-def _get_prefix():
-    prefix = getattr(settings, "DJANGO_SECRET_FIELDS_PREFIX", None)
-    if prefix is None:
-        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_PREFIX is not set")
-
-    return prefix

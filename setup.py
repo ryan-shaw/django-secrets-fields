@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="django-secrets-fields",
-    version="0.0.1",
+    version="0.0.9",
     description="Django encrypted model field that fetches the value from multiple sources",
     author="Ryan Shaw",
     author_email="ryan.shaw@min.vc",

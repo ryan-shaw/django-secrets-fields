@@ -2,6 +2,8 @@ import boto3
 import uuid
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.module_loading import import_string
+from .backends.backends import BaseSecretsBackend
 
 
 def get_client(role_arn: str = None) -> boto3.client:
@@ -24,9 +26,26 @@ def get_client(role_arn: str = None) -> boto3.client:
         return boto3.client("secretsmanager")
 
 
-def get_prefix():
+def get_prefix() -> str:
+    """
+    Prefix is defined in settings.py DJANGO_SECRET_FIELDS_PREFIX this function
+    returns the prefix
+    """
     prefix = getattr(settings, "DJANGO_SECRET_FIELDS_PREFIX", None)
     if prefix is None:
         raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_PREFIX is not set")
 
     return prefix
+
+
+def get_backend() -> BaseSecretsBackend:
+    """
+    Backend is defined in settings.py DJANGO_SECRET_FIELDS_BACKEND this function
+    returns the instance of the backend
+    """
+
+    backend_str = getattr(settings, "DJANGO_SECRET_FIELDS_BACKEND", None)
+    if not backend_str:
+        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_BACKEND is not set")
+
+    return import_string(backend_str)()
