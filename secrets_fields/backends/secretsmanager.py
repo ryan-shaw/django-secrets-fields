@@ -1,7 +1,11 @@
-import boto3
+try:
+    import boto3
+except ImportError:
+    raise ImportError("boto3 is required for AWS Secrets Manager backend - pip install django-secrets-fields[aws]")
 from .backends import BaseSecretsBackend
 from django.conf import settings
 from typing import cast
+
 
 
 class SecretsManagerBackend(BaseSecretsBackend):

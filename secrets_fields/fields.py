@@ -56,7 +56,7 @@ class SecretsManagerMixin(object):
         super().__init__(*args, **kwargs)
 
     def from_db_value(self, ciphertext: str, expression : str | None, connection : Any) -> Secret:
-        return Secret(ciphertext, self.kwargs)
+        return Secret(ciphertext, self.kwargs).get()
 
     def get_db_prep_value(self, value : str | Secret, connection : Any, prepared : bool = False) -> str | None:
         if isinstance(value, Secret):
