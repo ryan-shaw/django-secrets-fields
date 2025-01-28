@@ -6,59 +6,78 @@ import time
 import django.db.models
 from .util import get_backend
 from dataclasses import dataclass
-
-backend = get_backend()
+from typing import Any, cast
 
 TTL = 30
 
-cache = {}
-
-
 @dataclass
 class Cache:
-    ttl: int
+    ttl: float
     value: str
+
+cache : dict[str, Cache] = {}
 
 
 class Secret:
-    def __init__(self, secret):
-        self.secret = secret
+    def __init__(self, ciphertext : str, kwargs : dict[str, Any] | None = None):
+        if kwargs is None:
+            kwargs = {}
+        self.ciphertext = ciphertext
+        self.kwargs = kwargs
 
-    def get(self):
-        obj = cache.get(self.secret, None)
+    def encrypt(self, plaintext : str) -> str:
+        backend = get_backend()
+        return backend.create_secret(plaintext)
+
+    def get(self) -> str | None:
+        if self.ciphertext == "":
+            return None
+        obj = cache.get(self.ciphertext, None)
         if obj:
             if obj.ttl > time.time():
                 return obj.value
             else:
-                del cache[self.secret]
+                del cache[self.ciphertext]
 
-        plaintext = backend.get_secret(self.secret)
+        backend = get_backend()
+        plaintext = backend.get_secret(self.ciphertext)
 
         # cache the value
-        cache[self.secret] = Cache(ttl=time.time() + TTL, value=plaintext)
+        cache[self.ciphertext] = Cache(ttl=time.time() + TTL, value=plaintext)
         return plaintext
-
-    def ciphertext(self):
-        return self.secret
 
 
 class SecretsManagerMixin(object):
-    def from_db_value(self, value, expression, connection):
-        return Secret(value)
+    
+    attname : str
+    
+    def __init__(self, *args : list, **kwargs : dict[str, Any]) -> None:
+        self.kwargs = kwargs
+        super().__init__(*args, **kwargs)
 
-    def get_prep_value(self, value):
+    def from_db_value(self, ciphertext: str, expression : str | None, connection : Any) -> Secret:
+        return Secret(ciphertext, self.kwargs)
+
+    def get_db_prep_value(self, value : str | Secret, connection : Any, prepared : bool = False) -> str | None:
         if isinstance(value, Secret):
-            return value.ciphertext()
-        return value
+            return value.ciphertext
+        return Secret("", self.kwargs).encrypt(value)
 
-    def value_from_object(self, obj):
-        return obj.secret.ciphertext()
+    def get_prep_value(self, ciphertext : str | Secret) -> str:
+        if isinstance(ciphertext, Secret):
+            return ciphertext.ciphertext
+        return ciphertext
 
-    def value_to_string(self, obj):
+    def value_from_object(self, obj : Any) -> str:
+        # Get the ciphertext before serialisation
+        attr = getattr(obj, self.attname)
+        return cast(str, attr.ciphertext)
+
+    def value_to_string(self, obj: django.db.models.Model) -> str:
         value = self.value_from_object(obj)
         return self.get_prep_value(value)
 
-    def get_internal_type(self):
+    def get_internal_type(self) -> str:
         return "TextField"
 
 

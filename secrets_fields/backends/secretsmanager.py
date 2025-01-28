@@ -1,6 +1,7 @@
 import boto3
 from .backends import BaseSecretsBackend
 from django.conf import settings
+from typing import cast
 
 
 class SecretsManagerBackend(BaseSecretsBackend):
@@ -10,29 +11,32 @@ class SecretsManagerBackend(BaseSecretsBackend):
     """
 
     @property
-    def client_ro(self):
+    def client_ro(self) -> boto3.client:
         return _get_client(
             role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RO", None)
         )
 
     @property
-    def client_rw(self):
+    def client_rw(self) -> boto3.client:
         return _get_client(
             role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RW", None)
         )
 
-    def create_secret(self, secret_name: str, secret_value: str):
+    def get_ciphertext(self, secret_value: str) -> str:
+        return secret_value
+
+    def create_secret(self, *args : list) -> str:
         """Create secret using the backend
 
-        Args:
-            secret_name (str): name of the secret
-            secret_value (str): plaintext secret
+        Returns:
+            str: secret_name
         """
         self.client_rw.create_secret(
-            Name=secret_name,
-            SecretString=secret_value,
+            Name=args[0],
+            SecretString=args[1],
             Tags=[{"Key": "Managed-By", "Value": "django-secrets-fields"}],
         )
+        return cast(str, args[0])
 
     def get_secret(self, secret_name: str) -> str:
         """Get secret from backend
@@ -43,10 +47,10 @@ class SecretsManagerBackend(BaseSecretsBackend):
         Returns:
             str: plaintext secret
         """
-        return self.client_ro.get_secret_value(SecretId=secret_name)["SecretString"]
+        return cast(str, self.client_ro.get_secret_value(SecretId=secret_name)["SecretString"])
 
 
-def _get_client(role_arn: str = None) -> boto3.client:
+def _get_client(role_arn: str | None = None) -> boto3.client:
     """
     Get boto3 client for AWS Secrets Manager
     """

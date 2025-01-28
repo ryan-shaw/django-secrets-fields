@@ -4,9 +4,10 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 from .backends.backends import BaseSecretsBackend
+from typing import cast
 
 
-def get_client(role_arn: str = None) -> boto3.client:
+def get_client(role_arn: str | None = None) -> boto3.client:
     """
     Get boto3 client for AWS Secrets Manager
     """
@@ -35,7 +36,7 @@ def get_prefix() -> str:
     if prefix is None:
         raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_PREFIX is not set")
 
-    return prefix
+    return cast(str, prefix)
 
 
 def get_backend() -> BaseSecretsBackend:
@@ -48,4 +49,4 @@ def get_backend() -> BaseSecretsBackend:
     if not backend_str:
         raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_BACKEND is not set")
 
-    return import_string(backend_str)()
+    return cast(BaseSecretsBackend, import_string(backend_str)())
