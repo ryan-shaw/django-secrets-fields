@@ -38,15 +38,21 @@ def get_prefix() -> str:
 
     return cast(str, prefix)
 
+def get_config() -> dict[str, str]:
+    """
+    Settings are defined in settings.py DJANGO_SECRET_FIELDS this function
+    returns the settings
+    """
+    config = getattr(settings, "DJANGO_SECRET_FIELDS", None)
+    if config is None:
+        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS is not set")
+
+    return cast(dict[str, str], config)    
 
 def get_backend() -> BaseSecretsBackend:
-    """
-    Backend is defined in settings.py DJANGO_SECRET_FIELDS_BACKEND this function
-    returns the instance of the backend
-    """
-
-    backend_str = getattr(settings, "DJANGO_SECRET_FIELDS_BACKEND", None)
-    if not backend_str:
-        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_BACKEND is not set")
-
-    return cast(BaseSecretsBackend, import_string(backend_str)())
+    config = get_config()
+    backend = config.get("backend", None)
+    if backend is None:
+        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS['backend'] is not set")
+    
+    return cast(BaseSecretsBackend, import_string(backend)())

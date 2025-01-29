@@ -1,12 +1,12 @@
-import base64
 from cryptography.fernet import Fernet
 from django.core.management.base import BaseCommand
+from typing import Any
 
 
 class Command(BaseCommand):
     help = "Generate a Fernet encryption key"
 
-    def handle(self, *args, **options):
+    def handle(self, *args : Any, **options : Any) -> None:
         # Generate a Fernet key
         key = Fernet.generate_key()
 

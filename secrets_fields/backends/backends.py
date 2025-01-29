@@ -1,16 +1,18 @@
 from typing import Any
+
+
 class BaseSecretsBackend:
-    def get_ciphertext(self, secret_value: str) -> str:
-        """Get ciphertext from backend
+    def encrypt(self, plaintext : str) -> str:
+        """Encrypt the secret value using the backend"""
+        raise NotImplementedError()
+
+    def decrypt(self, ciphertext : str) -> str:
+        """Get plain text from the backend
 
         Args:
-            secret_value (str): plaintext secret
+            ciphertext (str): ciphertext
+
+        Returns:
+            str: plaintext
         """
-        raise NotImplementedError()
-
-    def create_secret(self, *args : Any) -> str:
-        """Create secret using the backend"""
-        raise NotImplementedError()
-
-    def get_secret(self, secret_name: str) -> str:
         raise NotImplementedError()

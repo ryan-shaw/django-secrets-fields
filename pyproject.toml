@@ -1,6 +1,6 @@
 [project]
 name = "django-secrets-fields"
-version = "1.0.0a2"
+version = "1.0.0a4"
 description = "Django encrypted model field that fetches the value from multiple sources"
 authors = [
     { name = "Ryan Shaw", email = "ryan.shaw@min.vc" },
@@ -12,9 +12,12 @@ requires-python = ">=3.10"
 dependencies = [
   "django>3",
 ]
-
 [tool.poetry]
 packages = [{include = "secrets_fields"}]
+
+[tool.poe.tasks]
+test = "poetry run ./testapp/manage.py test"
+build = "pyproject-build"
 
 [project.optional-dependencies]
 aws = ["boto3>=1.28.63"]
