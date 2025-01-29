@@ -1,12 +1,14 @@
-from typing import Any
 
 
 class BaseSecretsBackend:
-    def encrypt(self, plaintext : str) -> str:
+    def __init__(self, config):
+        self.config = config
+
+    def encrypt(self, plaintext: str) -> str:
         """Encrypt the secret value using the backend"""
         raise NotImplementedError()
 
-    def decrypt(self, ciphertext : str) -> str:
+    def decrypt(self, ciphertext: str) -> str:
         """Get plain text from the backend
 
         Args:

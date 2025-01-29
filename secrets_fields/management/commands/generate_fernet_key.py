@@ -6,7 +6,7 @@ from typing import Any
 class Command(BaseCommand):
     help = "Generate a Fernet encryption key"
 
-    def handle(self, *args : Any, **options : Any) -> None:
+    def handle(self, *args: Any, **options: Any) -> None:
         # Generate a Fernet key
         key = Fernet.generate_key()
 

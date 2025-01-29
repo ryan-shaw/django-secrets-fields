@@ -38,7 +38,8 @@ def get_prefix() -> str:
 
     return cast(str, prefix)
 
-def get_config() -> dict[str, str]:
+
+def get_config(key: str = "default") -> dict[str, str]:
     """
     Settings are defined in settings.py DJANGO_SECRET_FIELDS this function
     returns the settings
@@ -47,12 +48,13 @@ def get_config() -> dict[str, str]:
     if config is None:
         raise ImproperlyConfigured("DJANGO_SECRET_FIELDS is not set")
 
-    return cast(dict[str, str], config)    
+    return cast(dict[str, str], config.get(key))
 
-def get_backend() -> BaseSecretsBackend:
-    config = get_config()
+
+def get_backend(key: str = "default") -> BaseSecretsBackend:
+    config = get_config(key)
     backend = config.get("backend", None)
     if backend is None:
         raise ImproperlyConfigured("DJANGO_SECRET_FIELDS['backend'] is not set")
-    
-    return cast(BaseSecretsBackend, import_string(backend)())
+
+    return cast(BaseSecretsBackend, import_string(backend)(config))

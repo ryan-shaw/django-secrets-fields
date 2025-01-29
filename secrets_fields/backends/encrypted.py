@@ -1,6 +1,5 @@
 from cryptography import fernet
 from .backends import BaseSecretsBackend
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from ..util import get_config
 
@@ -22,12 +21,12 @@ class EncryptedBackend(BaseSecretsBackend):
 
         return fernet.Fernet(key)
 
-    def encrypt(self, plaintext : str) -> str:
+    def encrypt(self, plaintext: str) -> str:
         """Create secret using the backend"""
         encrypted: bytes = self._crypter.encrypt(plaintext.encode("utf-8"))
         return encrypted.decode("utf-8")
 
-    def decrypt(self, ciphertext : str) -> str:
+    def decrypt(self, ciphertext: str) -> str:
         """Get secret from backend
 
         Args:

@@ -369,6 +369,21 @@ django = "*"
 typing-extensions = "*"
 
 [[package]]
+name = "faker"
+version = "12.0.1"
+description = "Faker is a Python package that generates fake data for you."
+optional = false
+python-versions = ">=3.6"
+groups = ["dev"]
+files = [
+    {file = "Faker-12.0.1-py3-none-any.whl", hash = "sha256:1dc2811f20e163892fefe7006f2ce00778f8099a40aee265bfa60a13400de63d"},
+    {file = "Faker-12.0.1.tar.gz", hash = "sha256:aa7103805ae793277abbb85da9f6f05e76a1a295a9384a8e17c2fba2b3a690cb"},
+]
+
+[package.dependencies]
+python-dateutil = ">=2.4"
+
+[[package]]
 name = "idna"
 version = "3.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -483,6 +498,24 @@ files = [
     {file = "MarkupSafe-2.1.5-cp39-cp39-win_amd64.whl", hash = "sha256:fa173ec60341d6bb97a89f5ea19c85c5643c1e7dedebc22f5181eb73573142c5"},
     {file = "MarkupSafe-2.1.5.tar.gz", hash = "sha256:d283d37a890ba4c1ae73ffadf8046435c76e7bc2247bbb63c00bd1a709c6544b"},
 ]
+
+[[package]]
+name = "mixer"
+version = "7.2.2"
+description = "Mixer -- Is a fixtures replacement. Supported Django ORM, SqlAlchemy ORM, Mongoengine ODM and custom python objects."
+optional = false
+python-versions = ">=3.7"
+groups = ["dev"]
+files = [
+    {file = "mixer-7.2.2-py3-none-any.whl", hash = "sha256:8089b8e2d00288c77e622936198f5dd03c8ac1603a1530a4f870dc213363b2ae"},
+    {file = "mixer-7.2.2.tar.gz", hash = "sha256:9b3f1a261b56d8f2394f39955f83adbc7ff3ab4bb1065ebfec19a10d3e8501e0"},
+]
+
+[package.dependencies]
+Faker = ">=5.4.0,<12.1"
+
+[package.extras]
+tests = ["Django (>=3.0)", "Flask (>=1.0)", "Marshmallow (>=3.9)", "SQLAlchemy (>=1.1.4)", "flask-sqlalchemy (>=2.1)", "mongoengine (>=0.10.1)", "peewee (>=3.7.0)", "pony (>=0.7)", "psycopg2-binary (>=2.8.4)", "pytest"]
 
 [[package]]
 name = "moto"
@@ -919,4 +952,4 @@ aws = ["boto3"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "a6d336a3c348d8479b46e25818311464c6f157dbd8fb585fb64d6c3e38fc43d6"
+content-hash = "b757a09daef9c2149555f69b20ee12c782b87d49c1afa2f89a716c9cbb9ea47e"

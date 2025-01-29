@@ -8,7 +8,6 @@ import hashlib
 from .backends import BaseSecretsBackend
 from django.conf import settings
 from typing import cast
-from ..util import get_config
 
 
 class SecretsManagerBackend(BaseSecretsBackend):
@@ -33,13 +32,12 @@ class SecretsManagerBackend(BaseSecretsBackend):
         """
         Hash the plaintext to generate the name for the secret
         """
-        config = get_config()
-        prefix = config.get("prefix", None)
+        prefix = self.config.get("prefix", None)
         if not prefix:
-            raise ValueError("DJANGO_SECRET_FIELDS['prefix'] must be set")
+            raise ValueError("DJANGO_SECRET_FIELDS['backend']['prefix'] must be set")
         return prefix + hashlib.md5(plaintext.encode("utf-8")).hexdigest()
 
-    def encrypt(self, plaintext : str) -> str:
+    def encrypt(self, plaintext: str) -> str:
         """Create secret using the backend
 
         Returns:

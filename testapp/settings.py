@@ -125,11 +125,12 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 DJANGO_SECRET_FIELDS = {
-    "backend": "secrets_fields.backends.encrypted.EncryptedBackend",
-    "encryption_key": b"5_SgmNvlc9aNe1qePC2VdkJHE9fEUYN4xLVUoVZ6IbM=",
+    "default": {
+        "backend": "secrets_fields.backends.encrypted.EncryptedBackend",
+        "encryption_key": b"5_SgmNvlc9aNe1qePC2VdkJHE9fEUYN4xLVUoVZ6IbM=",
+    },
+    "aws": {
+        "backend": "secrets_fields.backends.secretsmanager.SecretsManagerBackend",
+        "prefix": "/path/",
+    },
 }
-
-# DJANGO_SECRET_FIELDS = {
-#     "backend": "secrets_fields.backends.secretsmanager.SecretsManagerBackend",
-#     "prefix": "/path/",
-# }

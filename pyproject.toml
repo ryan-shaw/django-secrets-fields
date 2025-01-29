@@ -1,6 +1,6 @@
 [project]
 name = "django-secrets-fields"
-version = "1.0.0a4"
+version = "1.0.0a7"
 description = "Django encrypted model field that fetches the value from multiple sources"
 authors = [
     { name = "Ryan Shaw", email = "ryan.shaw@min.vc" },
@@ -26,6 +26,7 @@ aws = ["boto3>=1.28.63"]
 django = "^4.2.6"
 moto = ">4"
 django-stubs = {extras = ["compatible-mypy"], version = "^5.1.2"}
+mixer = ">6"
 
 [build-system]
 requires = ["poetry-core"]
