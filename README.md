@@ -55,8 +55,7 @@ Django encrypted fields with support for multiple backends, currently supports s
 
 Before getting started with django-secrets-fields, ensure your runtime environment meets the following requirements:
 
-- **Programming Language:** Python
-- **Package Manager:** Poetry
+- **Programming Language:** Python 3.10+
 
 
 ### ⚙️ Installation
