@@ -4,9 +4,10 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 from .backends.backends import BaseSecretsBackend
+from typing import cast
 
 
-def get_client(role_arn: str = None) -> boto3.client:
+def get_client(role_arn: str | None = None) -> boto3.client:
     """
     Get boto3 client for AWS Secrets Manager
     """
@@ -35,17 +36,25 @@ def get_prefix() -> str:
     if prefix is None:
         raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_PREFIX is not set")
 
-    return prefix
+    return cast(str, prefix)
 
 
-def get_backend() -> BaseSecretsBackend:
+def get_config(key: str = "default") -> dict[str, str]:
     """
-    Backend is defined in settings.py DJANGO_SECRET_FIELDS_BACKEND this function
-    returns the instance of the backend
+    Settings are defined in settings.py DJANGO_SECRET_FIELDS this function
+    returns the settings
     """
+    config = getattr(settings, "DJANGO_SECRET_FIELDS", None)
+    if config is None:
+        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS is not set")
 
-    backend_str = getattr(settings, "DJANGO_SECRET_FIELDS_BACKEND", None)
-    if not backend_str:
-        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS_BACKEND is not set")
+    return cast(dict[str, str], config.get(key))
 
-    return import_string(backend_str)()
+
+def get_backend(key: str = "default") -> BaseSecretsBackend:
+    config = get_config(key)
+    backend = config.get("backend", None)
+    if backend is None:
+        raise ImproperlyConfigured("DJANGO_SECRET_FIELDS['backend'] is not set")
+
+    return cast(BaseSecretsBackend, import_string(backend)(config))

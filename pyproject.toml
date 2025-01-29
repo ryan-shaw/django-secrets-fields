@@ -1,29 +1,71 @@
-[tool.poetry]
+[project]
 name = "django-secrets-fields"
-version = "0.0.9"
+version = "1.0.0a7"
 description = "Django encrypted model field that fetches the value from multiple sources"
-authors = ["Ryan shaw <ryan.shaw@min.vc>"]
+authors = [
+    { name = "Ryan Shaw", email = "ryan.shaw@min.vc" },
+]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/ryan-shaw/django-secrets-fields"
+requires-python = ">=3.10"
+dependencies = [
+  "django>3",
+]
+[tool.poetry]
 packages = [{include = "secrets_fields"}]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-django = ">3"
-boto3 = "^1.28.63"
+[tool.poe.tasks]
+test = "poetry run ./testapp/manage.py test"
+build = "pyproject-build"
 
+[project.optional-dependencies]
+aws = ["boto3>=1.28.63"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.2"
 django = "^4.2.6"
-moto = "^4.2.6"
+moto = ">4"
+django-stubs = {extras = ["compatible-mypy"], version = "^5.1.2"}
+mixer = ">6"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.pytest]
-testpaths = ["tests"]
-DJANGO_SETTINGS_MODULE = "tests.settings"
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main"]
+show_error_codes = true
+follow_imports = "normal"
+ignore_missing_imports = true
+strict_equality = true
+warn_incomplete_stub = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+enable_error_code = ["ignore-without-code"]
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = false
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unreachable = true
+no_implicit_reexport = true
+explicit_package_bases = true
+disable_error_code = ["import-untyped"]
 
+[tool.django-stubs]
+django_settings_module = "testapp.settings"
+
+[[tool.mypy.overrides]]
+module = "testapp.manage"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "testapp.settings"
+ignore_errors = true
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["B904", "DJ006", "DJ008", "DJ012"]

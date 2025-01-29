@@ -2,65 +2,132 @@
 Django encrypted model field that fetches the value from AWS Secrets Manager
 """
 
-import time
+import json
 import django.db.models
 from .util import get_backend
 from dataclasses import dataclass
+from typing import Any, TypeAlias, TypeVar, Type, cast, Generic
 
-backend = get_backend()
+JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+
 
 TTL = 30
-
-cache = {}
 
 
 @dataclass
 class Cache:
-    ttl: int
+    ttl: float
     value: str
 
 
-class Secret:
-    def __init__(self, secret):
-        self.secret = secret
+cache: dict[str, Cache] = {}
 
-    def get(self):
-        obj = cache.get(self.secret, None)
-        if obj:
-            if obj.ttl > time.time():
-                return obj.value
-            else:
-                del cache[self.secret]
-
-        plaintext = backend.get_secret(self.secret)
-
-        # cache the value
-        cache[self.secret] = Cache(ttl=time.time() + TTL, value=plaintext)
-        return plaintext
-
-    def ciphertext(self):
-        return self.secret
+T = TypeVar("T")
 
 
-class SecretsManagerMixin(object):
-    def from_db_value(self, value, expression, connection):
-        return Secret(value)
+class SecretBase(Generic[T]):
+    def __init__(
+        self,
+        *,
+        backend: str = "default",
+        plaintext: T | None = None,
+        ciphertext: str | None = None,
+    ):
+        self.ciphertext = ciphertext
+        self._plaintext = plaintext
+        self._backend = get_backend(backend)
+        if not self.ciphertext and self._plaintext:
+            self.ciphertext = self._backend.encrypt(
+                self.prepare_ciphertext(self._plaintext)
+            )
 
-    def get_prep_value(self, value):
-        if isinstance(value, Secret):
-            return value.ciphertext()
-        return value
+    def prepare_ciphertext(self, value: T) -> str:
+        """Prepare the plaintext for encryption"""
+        return cast(str, value)
 
-    def value_from_object(self, obj):
-        return obj.secret.ciphertext()
+    def to_python(self, value: Any) -> T:
+        """Convert the decrypted ciphertext to a python object"""
+        return cast(T, value)
 
-    def value_to_string(self, obj):
-        value = self.value_from_object(obj)
-        return self.get_prep_value(value)
+    @property
+    def plaintext(self) -> T | None:
+        return self.get()
 
-    def get_internal_type(self):
+    def __str__(self) -> str:
+        return cast(str, self.get())
+
+    def __repr__(self) -> str:
+        return cast(str, self.get())
+
+    def get(self) -> T | None:
+        if self.ciphertext is None:
+            return None
+        return self.to_python(self._backend.decrypt(self.ciphertext))
+
+
+class SecretText(SecretBase[str]):
+    pass
+
+
+TF = TypeVar("TF", bound=SecretBase[Any])
+
+
+class SecretField(django.db.models.TextField, Generic[TF]):
+    attname: str
+
+    def __init__(
+        self, secret_type: Type[TF], backend: str = "default", *args: Any, **kwargs: Any
+    ):
+        self.secret_type = secret_type
+        self.backend = backend
+        super().__init__(*args, **kwargs)
+
+    def get_prep_value(self, value: TF | str | None) -> str | None:
+        # if not self.secret_type we need to convert to self.secret_type and encrypt it
+        if value is None:
+            return None
+        if not isinstance(value, SecretBase):
+            value = self.secret_type(plaintext=value, backend=self.backend)
+        return value.ciphertext
+
+    def get_internal_type(self) -> str:
         return "TextField"
 
 
-class SecretTextField(SecretsManagerMixin, django.db.models.TextField):
-    pass
+class SecretTextField(SecretField[SecretText]):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(SecretText, *args, **kwargs)
+
+    def from_db_value(
+        self, ciphertext: str, expression: str | None, connection: Any
+    ) -> SecretText:
+        return self.secret_type(ciphertext=ciphertext, backend=self.backend)
+
+
+class SecretJSON(SecretBase[JSON]):
+    def prepare_ciphertext(self, value: JSON) -> str:
+        return json.dumps(value)
+
+    def to_python(self, value: str) -> JSON:
+        return cast(JSON, json.loads(value))
+
+    # def __dict__(self) -> JSON:
+    #     return self.get()
+
+
+class SecretJSONField(SecretField[SecretJSON]):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(SecretJSON, *args, **kwargs)
+
+    def from_db_value(
+        self, ciphertext: str, expression: str | None, connection: Any
+    ) -> Any:
+        return self.secret_type(ciphertext=ciphertext, backend=self.backend).get()
+
+    def to_python(self, value: str | JSON | None) -> JSON | None:
+        if isinstance(value, str):
+            return cast(JSON, json.loads(value))
+        return value
+
+    def get_internal_type(self) -> str:
+        return "TextField"

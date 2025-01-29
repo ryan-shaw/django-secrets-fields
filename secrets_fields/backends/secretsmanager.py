@@ -1,6 +1,13 @@
-import boto3
+try:
+    import boto3
+except ImportError:
+    raise ImportError(
+        "boto3 is required for AWS Secrets Manager backend - pip install django-secrets-fields[aws]"
+    )
+import hashlib
 from .backends import BaseSecretsBackend
 from django.conf import settings
+from typing import cast
 
 
 class SecretsManagerBackend(BaseSecretsBackend):
@@ -10,43 +17,55 @@ class SecretsManagerBackend(BaseSecretsBackend):
     """
 
     @property
-    def client_ro(self):
+    def client_ro(self) -> boto3.client:
         return _get_client(
             role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RO", None)
         )
 
     @property
-    def client_rw(self):
+    def client_rw(self) -> boto3.client:
         return _get_client(
             role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RW", None)
         )
 
-    def create_secret(self, secret_name: str, secret_value: str):
+    def _generate_name(self, plaintext: str) -> str:
+        """
+        Hash the plaintext to generate the name for the secret
+        """
+        prefix = self.config.get("prefix", None)
+        if not prefix:
+            raise ValueError("DJANGO_SECRET_FIELDS['backend']['prefix'] must be set")
+        return prefix + hashlib.md5(plaintext.encode("utf-8")).hexdigest()
+
+    def encrypt(self, plaintext: str) -> str:
         """Create secret using the backend
 
-        Args:
-            secret_name (str): name of the secret
-            secret_value (str): plaintext secret
+        Returns:
+            str: secret path
         """
+        name = self._generate_name(plaintext)
         self.client_rw.create_secret(
-            Name=secret_name,
-            SecretString=secret_value,
+            Name=name,
+            SecretString=plaintext,
             Tags=[{"Key": "Managed-By", "Value": "django-secrets-fields"}],
         )
+        return name
 
-    def get_secret(self, secret_name: str) -> str:
+    def decrypt(self, ciphertext: str) -> str:
         """Get secret from backend
 
         Args:
-            secret_name (str): name of the secret
+            ciphertext (str): the path of the secret in AWS Secrets Manager
 
         Returns:
             str: plaintext secret
         """
-        return self.client_ro.get_secret_value(SecretId=secret_name)["SecretString"]
+        return cast(
+            str, self.client_ro.get_secret_value(SecretId=ciphertext)["SecretString"]
+        )
 
 
-def _get_client(role_arn: str = None) -> boto3.client:
+def _get_client(role_arn: str | None = None) -> boto3.client:
     """
     Get boto3 client for AWS Secrets Manager
     """

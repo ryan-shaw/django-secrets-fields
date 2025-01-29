@@ -1,12 +1,20 @@
-class BaseSecretsBackend:
-    def create_secret(self, secret_name: str, secret_value: str):
-        """Create secret using the backend
 
-        Args:
-            secret_name (str): name of the secret
-            secret_value (str): plaintext secret
-        """
+
+class BaseSecretsBackend:
+    def __init__(self, config):
+        self.config = config
+
+    def encrypt(self, plaintext: str) -> str:
+        """Encrypt the secret value using the backend"""
         raise NotImplementedError()
 
-    def get_secret(self, secret_name: str) -> str:
+    def decrypt(self, ciphertext: str) -> str:
+        """Get plain text from the backend
+
+        Args:
+            ciphertext (str): ciphertext
+
+        Returns:
+            str: plaintext
+        """
         raise NotImplementedError()
