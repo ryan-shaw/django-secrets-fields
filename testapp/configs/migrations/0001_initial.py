@@ -5,7 +5,6 @@ import secrets_fields.fields
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []

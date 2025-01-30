@@ -1,7 +1,6 @@
 from cryptography import fernet
 from .backends import BaseSecretsBackend
 from django.core.exceptions import ImproperlyConfigured
-from ..util import get_config
 
 
 class EncryptedBackend(BaseSecretsBackend):
