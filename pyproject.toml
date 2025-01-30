@@ -18,7 +18,7 @@ packages = [{include = "secrets_fields"}]
 [tool.poe.tasks]
 test = "poetry run pytest"
 build = "pyproject-build"
-test_cov = { shell = "poetry run pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=secrets_fields | tee pytest-coverage.txt" }
+test_cov = { shell = "poetry run pytest --cov-report=xml --cov-branch --cov-report=term-missing:skip-covered --cov=secrets_fields | tee pytest-coverage.txt" }
 
 [project.optional-dependencies]
 aws = ["boto3>=1.28.63"]

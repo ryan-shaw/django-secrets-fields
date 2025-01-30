@@ -5,6 +5,7 @@ except ImportError:
         "boto3 is required for AWS Secrets Manager backend - pip install django-secrets-fields[aws]"
     )
 import hashlib
+import uuid
 from .backends import BaseSecretsBackend
 from typing import cast
 
@@ -72,7 +73,9 @@ def _get_client(role_arn: str | None = None) -> boto3.client:
     """
     if role_arn:
         sts_client = boto3.client("sts")
-        assumed_role_object = sts_client.assume_role(RoleArn=role_arn)
+        assumed_role_object = sts_client.assume_role(
+            RoleArn=role_arn, RoleSessionName=str(uuid.uuid4())
+        )
         credentials = assumed_role_object["Credentials"]
         session = boto3.Session(
             aws_access_key_id=credentials["AccessKeyId"],

@@ -3,6 +3,7 @@ from cryptography import fernet
 from moto import mock_aws
 from testapp.configs.models import TestModel
 from mixer.backend.django import mixer
+from django.test import override_settings
 
 pytestmark = pytest.mark.django_db
 
@@ -121,3 +122,29 @@ def test_model_json_field_mixed_secrets_manager():
         secret=None,
     )
     assert model.config_aws == {"test": "supersecret"}
+
+
+@mock_aws
+@pytest.mark.django_db
+@override_settings(
+    DJANGO_SECRETS_FIELDS={
+        "aws": {
+            "backend": "secrets_fields.backends.secretsmanager.SecretsManagerBackend",
+            "prefix": "/path/",
+            "role_arn_rw": "arn:aws:iam::123456789012:role/role_name_rw",
+        },
+        "static": {
+            "backend": "secrets_fields.backends.encrypted.EncryptedBackend",
+            "encryption_key": b"5_SgmNvlc9aNe1qePC2VdkJHE9fEUYN4xLVUoVZ6IbM=",
+        },
+    }
+)
+def test_model_json_field_list_secrets_manager_role():
+    instance = TestModel()
+    instance.config_aws = [1, 2, 3]
+    instance.save()
+
+    assert instance.config_aws == [1, 2, 3]
+
+    instance = TestModel.objects.first()
+    assert instance.config_aws == [1, 2, 3]
