@@ -1,6 +1,6 @@
 [project]
 name = "django-secrets-fields"
-version = "1.0.0"
+version = "1.0.1"
 description = "Django encrypted model field that fetches the value from multiple sources"
 authors = [
     { name = "Ryan Shaw", email = "ryan.shaw@min.vc" },
