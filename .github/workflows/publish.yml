@@ -3,11 +3,19 @@ name: Publish Python 🐍 distribution 📦 to PyPI
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - main
 
 jobs:
   publish:
     name: Build and Publish Package
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/django-secrets-fields
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
 
     steps:
       - name: Checkout code
