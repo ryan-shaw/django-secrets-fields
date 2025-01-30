@@ -40,4 +40,6 @@ jobs:
 
       - name: Run Django tests
         working-directory: testapp
+        env:
+          AWS_DEFAUT_REGION: eu-west-1
         run: poetry run python manage.py test
