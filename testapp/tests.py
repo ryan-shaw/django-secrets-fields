@@ -1,7 +1,7 @@
 from cryptography import fernet
 from django.test import TestCase
 from moto import mock_aws
-from testapp.models import TestModel
+from testapp.configs.models import TestModel
 from mixer.backend.django import mixer
 
 

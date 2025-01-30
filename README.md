@@ -76,7 +76,7 @@ pip install django-secrets-fields[aws]
 
 **settings.py**
 ```python
-DJANGO_SECRET_FIELDS = {
+DJANGO_SECRETS_FIELDS = {
     "default": {
         "backend": "secrets_fields.backends.encrypted.EncryptedBackend",
         "encryption_key": b"<fernet key>",
@@ -88,7 +88,7 @@ DJANGO_SECRET_FIELDS = {
 }
 ```
 
-A [Fernet](https://cryptography.io/en/latest/fernet/) can be generated using the following command:
+A [Fernet](https://cryptography.io/en/latest/fernet/) key can be generated using the following command:
 
 ```bash
 python manage.py generate_fernet_key
@@ -161,6 +161,6 @@ class MyModel(models.Model):
 
 ## 🎗 License
 
-This project is protected under the [MIT](https://choosealicense.com/licenses/mit) License. For more details, refer to the [LICENSE](https://choosealicense.com/licenses/) file.
+This project is protected under the [MIT](https://choosealicense.com/licenses/mit) License. For more details, refer to the [LICENSE](https://github.com/ryan-shaw/django-secrets-fields/blob/main/LICENSE) file.
 
 ---

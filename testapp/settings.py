@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "secrets_fields",
     "testapp",
+    "configs",
 ]
 
 MIDDLEWARE = [
@@ -124,7 +125,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-DJANGO_SECRET_FIELDS = {
+DJANGO_SECRETS_FIELDS = {
     "default": {
         "backend": "secrets_fields.backends.encrypted.EncryptedBackend",
         "encryption_key": b"5_SgmNvlc9aNe1qePC2VdkJHE9fEUYN4xLVUoVZ6IbM=",

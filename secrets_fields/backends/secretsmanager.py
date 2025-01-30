@@ -18,14 +18,16 @@ class SecretsManagerBackend(BaseSecretsBackend):
 
     @property
     def client_ro(self) -> boto3.client:
+        role_arn_ro = self.config.get("role_arn_ro", None)
         return _get_client(
-            role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RO", None)
+            role_arn=role_arn_ro,
         )
 
     @property
     def client_rw(self) -> boto3.client:
+        role_rw = self.config.get("role_arn_rw", None)
         return _get_client(
-            role_arn=getattr(settings, "DJANGO_SECRET_FIELDS_AWS_ROLE_ARN_RW", None)
+            role_arn=role_rw,
         )
 
     def _generate_name(self, plaintext: str) -> str:
@@ -34,7 +36,7 @@ class SecretsManagerBackend(BaseSecretsBackend):
         """
         prefix = self.config.get("prefix", None)
         if not prefix:
-            raise ValueError("DJANGO_SECRET_FIELDS['backend']['prefix'] must be set")
+            raise ValueError("DJANGO_SECRETS_FIELDS['backend']['prefix'] must be set")
         return prefix + hashlib.md5(plaintext.encode("utf-8")).hexdigest()
 
     def encrypt(self, plaintext: str) -> str:
