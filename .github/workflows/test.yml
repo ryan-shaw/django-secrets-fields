@@ -7,6 +7,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -37,9 +42,24 @@ jobs:
         run: |
           poetry add "django~=${{ matrix.django-version }}"
           poetry install
+          pip install poethepoet
 
       - name: Run Django tests
         working-directory: testapp
         env:
           AWS_DEFAULT_REGION: eu-west-1
-        run: poetry run python manage.py test
+        run: poe test_cov
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        if: matrix.python-version == '3.13' && matrix.django-version == '4.2'
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
+      
+      - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.13' && matrix.django-version == '4.2'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: ryan-shaw/django-secrets-fields
