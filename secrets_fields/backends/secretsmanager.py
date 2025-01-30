@@ -6,7 +6,6 @@ except ImportError:
     )
 import hashlib
 from .backends import BaseSecretsBackend
-from django.conf import settings
 from typing import cast
 
 
