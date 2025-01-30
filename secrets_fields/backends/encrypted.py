@@ -12,8 +12,7 @@ class EncryptedBackend(BaseSecretsBackend):
 
     @property
     def _crypter(self) -> fernet.Fernet:
-        config = get_config()
-        key = config.get("encryption_key", None)
+        key = self.config.get("encryption_key", None)
         if not key:
             raise ImproperlyConfigured(
                 "DJANGO_SECRETS_FIELDS['encryption_key'] must be set"
