@@ -37,7 +37,7 @@ jobs:
         run: |
           poetry add "django~=${{ matrix.django-version }}"
           poetry install
-          pip install poe
+          pip install poethepoet
 
       - name: Run Django tests
         working-directory: testapp
@@ -47,6 +47,7 @@ jobs:
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
+        if: matrix.python-version == '3.13' && matrix.django-version == '4.2'
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
