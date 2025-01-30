@@ -8,8 +8,8 @@
 <p align="center">
 	<img src="https://img.shields.io/github/license/ryan-shaw/django-secrets-fields?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
 	<img src="https://img.shields.io/github/last-commit/ryan-shaw/django-secrets-fields?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
-	<img src="https://img.shields.io/github/languages/top/ryan-shaw/django-secrets-fields?style=default&color=0080ff" alt="repo-top-language">
-	<img src="https://img.shields.io/github/languages/count/ryan-shaw/django-secrets-fields?style=default&color=0080ff" alt="repo-language-count">
+	<a href="https://codecov.io/gh/ryan-shaw/django-secrets-fields"><img src="https://img.shields.io/codecov/c/github/ryan-shaw/django-secrets-fields" alt="code-cov"></a>
+
 </p>
 <p align="center"><!-- default option, no dependency badges. -->
 </p>
