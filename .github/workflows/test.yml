@@ -56,3 +56,10 @@ jobs:
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
+      
+      - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.13' && matrix.django-version == '4.2'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: ryan-shaw/django-secrets-fields
