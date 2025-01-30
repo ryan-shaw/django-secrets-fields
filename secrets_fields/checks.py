@@ -4,7 +4,7 @@ from django.core.checks import Error, register
 from django.apps import apps
 from .fields import SecretField
 
-def _has_secret_text_field():
+def _has_secret_text_field() -> bool:
     """Check if any model uses SecretTextField."""
     for model in apps.get_models():
         for field in model._meta.get_fields():
@@ -13,7 +13,7 @@ def _has_secret_text_field():
     return False
 
 
-def check_secret_field_settings(app_configs, **kwargs):
+def check_secret_field_settings(app_configs : dict, **kwargs : dict) -> list[Error]:
     errors = []
     
     if _has_secret_text_field() and not hasattr(settings, "DJANGO_SECRETS_FIELDS"):

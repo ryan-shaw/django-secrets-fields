@@ -37,7 +37,7 @@ class SecretsManagerBackend(BaseSecretsBackend):
         prefix = self.config.get("prefix", None)
         if not prefix:
             raise ValueError("DJANGO_SECRETS_FIELDS['backend']['prefix'] must be set")
-        return prefix + hashlib.md5(plaintext.encode("utf-8")).hexdigest()
+        return cast(str, prefix + hashlib.md5(plaintext.encode("utf-8")).hexdigest())
 
     def encrypt(self, plaintext: str) -> str:
         """Create secret using the backend

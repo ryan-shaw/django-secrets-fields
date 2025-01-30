@@ -6,5 +6,5 @@ class DjangoSecretsField(AppConfig):
     name = "secrets_fields"
     verbose_name = "Django Secrets Field"
     
-    def ready(self):
-        register()(check_secret_field_settings)
+    def ready(self) -> None:
+        register()(check_secret_field_settings) # type: ignore[type-var]
