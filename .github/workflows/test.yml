@@ -37,9 +37,16 @@ jobs:
         run: |
           poetry add "django~=${{ matrix.django-version }}"
           poetry install
+          pip install poe
 
       - name: Run Django tests
         working-directory: testapp
         env:
           AWS_DEFAULT_REGION: eu-west-1
-        run: poetry run python manage.py test
+        run: poe test_cov
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml

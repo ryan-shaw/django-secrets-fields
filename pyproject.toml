@@ -16,8 +16,9 @@ dependencies = [
 packages = [{include = "secrets_fields"}]
 
 [tool.poe.tasks]
-test = "poetry run ./testapp/manage.py test"
+test = "poetry run pytest"
 build = "pyproject-build"
+test_cov = { shell = "poetry run pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=secrets_fields | tee pytest-coverage.txt" }
 
 [project.optional-dependencies]
 aws = ["boto3>=1.28.63"]
@@ -27,6 +28,9 @@ django = ">=4"
 moto = ">4"
 django-stubs = {extras = ["compatible-mypy"], version = "^5.1.2"}
 mixer = ">6"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+pytest-django = "^4.9.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -59,3 +63,8 @@ disable_error_code = ["import-untyped"]
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
 ignore = ["B904", "DJ006", "DJ008", "DJ012"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "testapp.settings"  # Adjust if needed
+pythonpath = "testapp"
+python_files = ["tests.py", "test_*.py", "*_test.py"]
