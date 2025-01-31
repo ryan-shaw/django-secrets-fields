@@ -3,8 +3,10 @@ Django encrypted model field that fetches the value from AWS Secrets Manager
 """
 
 import json
+import warnings
 import django.db.models
 from .util import get_backend
+from secrets_fields.exceptions import DecryptionException
 from dataclasses import dataclass
 from typing import Any, TypeAlias, TypeVar, Type, cast, Generic
 
@@ -62,7 +64,16 @@ class SecretBase(Generic[T]):
     def get(self) -> T | None:
         if self.ciphertext is None:
             return None
-        return self.to_python(self._backend.decrypt(self.ciphertext))
+        try:
+            plaintext = self._backend.decrypt(self.ciphertext)
+        except DecryptionException:
+            warnings.warn(
+                "The field is not encrypted in the database.",
+                UserWarning,
+            )
+            return self.to_python(self.ciphertext)
+        else:
+            return self.to_python(plaintext)
 
 
 class SecretText(SecretBase[str]):
@@ -110,9 +121,6 @@ class SecretJSON(SecretBase[JSON]):
 
     def to_python(self, value: str) -> JSON:
         return cast(JSON, json.loads(value))
-
-    # def __dict__(self) -> JSON:
-    #     return self.get()
 
 
 class SecretJSONField(SecretField[SecretJSON]):

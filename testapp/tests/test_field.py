@@ -1,23 +1,25 @@
+import json
 import pytest
 from cryptography import fernet
 from moto import mock_aws
-from testapp.configs.models import TestModel
+from unittest.mock import patch, Mock
+from testapp.configs import models
 from mixer.backend.django import mixer
 from django.test import override_settings
 
 pytestmark = pytest.mark.django_db
 
 
-def test_model_text_field():
-    instance = TestModel()
+def test_model_text_field() -> None:
+    instance = models.ModelTextStatic()
     instance.secret = "supersecret"
     instance.save()
 
-    instance = TestModel.objects.first()
+    instance = models.ModelTextStatic.objects.first()
     assert instance.secret.get() == "supersecret"
     instance.save()
     assert instance.secret.get() == "supersecret"
-    instance = TestModel.objects.first()
+    instance = models.ModelTextStatic.objects.first()
     assert instance.secret.get() == "supersecret"
 
     crypter = fernet.Fernet(b"5_SgmNvlc9aNe1qePC2VdkJHE9fEUYN4xLVUoVZ6IbM=")
@@ -31,97 +33,102 @@ def test_model_text_field():
     assert repr(instance.secret) == "supersecret"
 
 
-def test_model_json_field_dict():
-    instance = TestModel()
-    instance.config = {"test": "supersecret"}
-    assert instance.config == {"test": "supersecret"}
+def test_model_json_field_dict() -> None:
+    instance = models.ModelJSONStatic()
+    instance.secret = {"test": "supersecret"}
+    assert instance.secret == {"test": "supersecret"}
     instance.save()
-    assert instance.config == {"test": "supersecret"}
+    assert instance.secret == {"test": "supersecret"}
 
-    instance = TestModel.objects.first()
-    assert instance.config == {"test": "supersecret"}
+    instance = models.ModelJSONStatic.objects.first()
+    assert instance.secret == {"test": "supersecret"}
 
 
-def test_model_json_field_list():
-    instance = TestModel()
-    instance.config = [1, 2, 3]
-    assert instance.config == [1, 2, 3]
+def test_model_json_field_list() -> None:
+    instance = models.ModelJSONStatic()
+    instance.secret = [1, 2, 3]
+    assert instance.secret == [1, 2, 3]
     instance.save()
-    assert instance.config == [1, 2, 3]
+    assert instance.secret == [1, 2, 3]
 
-    instance = TestModel.objects.first()
-    assert instance.config == [1, 2, 3]
+    instance = models.ModelJSONStatic.objects.first()
+    assert instance.secret == [1, 2, 3]
 
 
-def test_model_json_field_mixed():
+def test_model_json_field_mixed() -> None:
     model = mixer.blend(
-        TestModel,
+        models.ModelJSONStatic,
         config={"test": "supersecret"},
-        config_aws=None,
-        secret_aws=None,
         secret=None,
     )
     assert model.config == {"test": "supersecret"}
 
 
-@mock_aws
-@pytest.mark.django_db
-def test_model_text_field_secrets_manager():
-    instance = TestModel()
-    instance.secret_aws = "supersecret"
+@patch("secrets_fields.fields.SecretField.get_prep_value")
+def test_json_field_encrypted_convert(mock_get_prep_value: Mock) -> None:
+    mock_get_prep_value.return_value = json.dumps({"test": "123"})
+    instance = models.ModelJSONStatic()
+    instance.secret = {"test": "123"}
     instance.save()
 
-    instance = TestModel.objects.first()
-    assert instance.secret_aws.get() == "supersecret"
-    instance.save()
-    assert instance.secret_aws.get() == "supersecret"
-    instance = TestModel.objects.first()
-    assert instance.secret_aws.get() == "supersecret"
-    assert instance.secret_aws.ciphertext == "/path/9a618248b64db62d15b300a07b00580b"
-
-    assert instance.secret_aws.plaintext == "supersecret"
-    assert instance.secret_aws.get() == "supersecret"
-    assert str(instance.secret_aws) == "supersecret"
-    assert repr(instance.secret_aws) == "supersecret"
+    models.ModelJSONStatic.objects.first()
 
 
 @mock_aws
 @pytest.mark.django_db
-def test_model_json_field_dict_secrets_manager():
-    instance = TestModel()
-    instance.config_aws = {"test": "supersecret"}
+def test_model_text_field_secrets_manager() -> None:
+    instance = models.ModelTextAWS()
+    instance.secret = "supersecret"
     instance.save()
 
-    assert instance.config_aws == {"test": "supersecret"}
+    instance = models.ModelTextAWS.objects.first()
+    assert instance.secret.get() == "supersecret"
+    instance.save()
+    assert instance.secret.get() == "supersecret"
+    instance = models.ModelTextAWS.objects.first()
+    assert instance.secret.get() == "supersecret"
+    assert instance.secret.ciphertext == "/path/9a618248b64db62d15b300a07b00580b"
 
-    instance = TestModel.objects.first()
-    assert instance.config_aws == {"test": "supersecret"}
+    assert instance.secret.plaintext == "supersecret"
+    assert instance.secret.get() == "supersecret"
+    assert str(instance.secret) == "supersecret"
+    assert repr(instance.secret) == "supersecret"
 
 
 @mock_aws
 @pytest.mark.django_db
-def test_model_json_field_list_secrets_manager():
-    instance = TestModel()
-    instance.config_aws = [1, 2, 3]
+def test_model_json_field_dict_secrets_manager() -> None:
+    instance = models.ModelJSONAWS()
+    instance.secret = {"test": "supersecret"}
     instance.save()
 
-    assert instance.config_aws == [1, 2, 3]
+    assert instance.secret == {"test": "supersecret"}
 
-    instance = TestModel.objects.first()
-    assert instance.config_aws == [1, 2, 3]
+    instance = models.ModelJSONAWS.objects.first()
+    assert instance.secret == {"test": "supersecret"}
 
 
 @mock_aws
 @pytest.mark.django_db
-def test_model_json_field_mixed_secrets_manager():
+def test_model_json_field_list_secrets_manager() -> None:
+    instance = models.ModelJSONAWS()
+    instance.secret = [1, 2, 3]
+    instance.save()
+
+    assert instance.secret == [1, 2, 3]
+
+    instance = models.ModelJSONAWS.objects.first()
+    assert instance.secret == [1, 2, 3]
+
+
+@mock_aws
+@pytest.mark.django_db
+def test_model_json_field_mixed_secrets_manager() -> None:
     model = mixer.blend(
-        TestModel,
-        config_aws={"test": "supersecret"},
-        config=None,
-        secret_aws=None,
-        secret=None,
+        models.ModelJSONAWS,
+        secret={"test": "supersecret"},
     )
-    assert model.config_aws == {"test": "supersecret"}
+    assert model.secret == {"test": "supersecret"}
 
 
 @mock_aws
@@ -139,12 +146,12 @@ def test_model_json_field_mixed_secrets_manager():
         },
     }
 )
-def test_model_json_field_list_secrets_manager_role():
-    instance = TestModel()
-    instance.config_aws = [1, 2, 3]
+def test_model_json_field_list_secrets_manager_role() -> None:
+    instance = models.ModelJSONAWS()
+    instance.secret = [1, 2, 3]
     instance.save()
 
-    assert instance.config_aws == [1, 2, 3]
+    assert instance.secret == [1, 2, 3]
 
-    instance = TestModel.objects.first()
-    assert instance.config_aws == [1, 2, 3]
+    instance = models.ModelJSONAWS.objects.first()
+    assert instance.secret == [1, 2, 3]
