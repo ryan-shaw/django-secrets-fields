@@ -40,14 +40,6 @@ class SecretsManagerBackend(BaseSecretsBackend):
             raise ValueError("DJANGO_SECRETS_FIELDS['backend']['prefix'] must be set")
         return cast(str, prefix + hashlib.md5(plaintext.encode("utf-8")).hexdigest())
 
-    def is_valid(self, ciphertext: str) -> bool:
-        """Check if the provided ciphertext is an existing secrets manager path"""
-        try:
-            self.client_ro.get_secret_value(SecretId=ciphertext)
-            return True
-        except self.client_ro.exceptions.ResourceNotFoundException:
-            return False
-
     def encrypt(self, plaintext: str) -> str:
         """Create secret using the backend
 
