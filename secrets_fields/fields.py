@@ -9,6 +9,7 @@ from .util import get_backend
 from secrets_fields.exceptions import DecryptionException
 from dataclasses import dataclass
 from typing import Any, TypeAlias, TypeVar, Type, cast, Generic
+from django.conf import settings
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
@@ -42,6 +43,8 @@ class SecretBase(Generic[T]):
             self.ciphertext = self._backend.encrypt(
                 self.prepare_ciphertext(self._plaintext)
             )
+            # prepend version
+            self.ciphertext = f"v1|{self.ciphertext}"
 
     def prepare_ciphertext(self, value: T) -> str:
         """Prepare the plaintext for encryption"""
@@ -64,14 +67,39 @@ class SecretBase(Generic[T]):
     def get(self) -> T | None:
         if self.ciphertext is None:
             return None
+        components = self.ciphertext.split("|")
+        valid_cipertext = len(components) == 2 and components[0] == "v1"
         try:
-            plaintext = self._backend.decrypt(self.ciphertext)
+            if len(components) == 1:
+                plaintext = self._backend.decrypt(self.ciphertext)
+                warnings.warn(
+                    "This field needs migrating to the new format.",
+                    UserWarning,
+                )
+            else:
+                ciphertext = components[-1]
+                plaintext = self._backend.decrypt(ciphertext)
         except DecryptionException:
-            warnings.warn(
-                "The field is not encrypted in the database.",
-                UserWarning,
-            )
-            return self.to_python(self.ciphertext)
+            if not valid_cipertext and getattr(
+                settings, "DJANGO_SECRETS_FIELDS_MIGRATE", False
+            ):
+                warnings.warn(
+                    "The field does appear to be encrypted, if this model is resaved this value will be enrypted. You can use `./manage.py migrate_encrypted` to migrate all models.",
+                    UserWarning,
+                )
+                return self.to_python(self.ciphertext)
+            elif valid_cipertext:
+                warnings.warn(
+                    "Decryption of the field failed. Has the key changed?",
+                    UserWarning,
+                )
+                raise
+            else:
+                warnings.warn(
+                    "Decryption of the field failed. If you need to migrate a plaintext field to an encrypted form, you can set DJANGO_SECRETS_FIELDS_MIGRATE=True and this field will be migrated using `./manage.py migrate_encrypted`",
+                    UserWarning,
+                )
+                raise
         else:
             return self.to_python(plaintext)
 

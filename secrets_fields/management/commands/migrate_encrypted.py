@@ -21,7 +21,6 @@ class Command(BaseCommand):
                 continue
 
             # Fetch and re-save all model instances
-
             for instance in model.objects.all():
                 # mark the secret_fields list as updated
                 instance.save(update_fields=secret_fields)

@@ -86,6 +86,9 @@ DJANGO_SECRETS_FIELDS = {
         "prefix": "/path/",
     },
 }
+
+# If you need to migrate from plaintext fields, set this value to True and run `manage.py migrate_encrypted` - this could take a long time depending on the number of models and instances.
+DJANGO_SECRETS_FIELDS_MIGRATE = True
 ```
 
 A [Fernet](https://cryptography.io/en/latest/fernet/) key can be generated using the following command:
@@ -93,6 +96,7 @@ A [Fernet](https://cryptography.io/en/latest/fernet/) key can be generated using
 ```bash
 python manage.py generate_fernet_key
 ```
+
 
 
 **models.py**

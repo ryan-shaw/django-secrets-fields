@@ -47,11 +47,14 @@ class SecretsManagerBackend(BaseSecretsBackend):
             str: secret path
         """
         name = self._generate_name(plaintext)
-        self.client_rw.create_secret(
-            Name=name,
-            SecretString=plaintext,
-            Tags=[{"Key": "Managed-By", "Value": "django-secrets-fields"}],
-        )
+        try:
+            self.client_ro.get_secret_value(SecretId=name)
+        except self.client_ro.exceptions.ResourceNotFoundException:
+            self.client_rw.create_secret(
+                Name=name,
+                SecretString=plaintext,
+                Tags=[{"Key": "Managed-By", "Value": "django-secrets-fields"}],
+            )
         return name
 
     def decrypt(self, ciphertext: str) -> str:
