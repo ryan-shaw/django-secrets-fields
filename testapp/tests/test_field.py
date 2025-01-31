@@ -2,10 +2,15 @@ import json
 import pytest
 from cryptography import fernet
 from moto import mock_aws
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from testapp.configs import models
 from mixer.backend.django import mixer
 from django.test import override_settings
+from django.db import connection
+
+from secrets_fields.management.commands.migrate_encrypted import (
+    Command as MigrateEncryptedCommand,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -64,14 +69,34 @@ def test_model_json_field_mixed() -> None:
     assert model.config == {"test": "supersecret"}
 
 
-@patch("secrets_fields.fields.SecretField.get_prep_value")
-def test_json_field_encrypted_convert(mock_get_prep_value: Mock) -> None:
-    mock_get_prep_value.return_value = json.dumps({"test": "123"})
-    instance = models.ModelJSONStatic()
-    instance.secret = {"test": "123"}
-    instance.save()
+def test_json_field_encrypted_convert() -> None:
+    with patch(
+        "secrets_fields.fields.SecretField.get_prep_value"
+    ) as mock_get_prep_value:
+        mock_get_prep_value.return_value = json.dumps({"test": "123"})
+        instance = models.ModelJSONStatic()
+        instance.secret = {"test": "123"}
+        instance.save()
 
-    models.ModelJSONStatic.objects.first()
+    instance = models.ModelJSONStatic.objects.first()
+    assert instance.secret == {"test": "123"}
+
+    # Raw SQL to check the value is not encrypted
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT * FROM {models.ModelJSONStatic._meta.db_table}")
+        row = cursor.fetchone()
+        assert row[1] == '{"test": "123"}'
+
+        MigrateEncryptedCommand().handle()
+
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT * FROM {models.ModelJSONStatic._meta.db_table}")
+        row = cursor.fetchone()
+        assert row[1] != '{"test": "123"}'
+        # Decrypt the value to make sure it's valid
+        crypter = fernet.Fernet(b"5_SgmNvlc9aNe1qePC2VdkJHE9fEUYN4xLVUoVZ6IbM=")
+        decrypted = crypter.decrypt(row[1].encode("utf-8")).decode("utf-8")
+        assert json.loads(decrypted) == {"test": "123"}
 
 
 @mock_aws
