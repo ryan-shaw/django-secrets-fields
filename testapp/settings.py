@@ -135,3 +135,4 @@ DJANGO_SECRETS_FIELDS = {
         "prefix": "/path/",
     },
 }
+DJANGO_SECRETS_FIELDS_MIGRATE = False
