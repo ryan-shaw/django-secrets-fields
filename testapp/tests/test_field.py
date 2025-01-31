@@ -99,7 +99,6 @@ def test_json_field_encrypted_convert_plaintext() -> None:
         assert row[1] != '{"test": "123"}'
         # Decrypt the value to make sure it's valid
         crypter = fernet.Fernet(b"5_SgmNvlc9aNe1qePC2VdkJHE9fEUYN4xLVUoVZ6IbM=")
-        print(row)
         decrypted = crypter.decrypt(row[1].replace("v1|", "").encode("utf-8")).decode(
             "utf-8"
         )
@@ -176,6 +175,19 @@ def test_json_field_encrypted_plaintext_no_migrate() -> None:
         )
 
 
+def test_json_field_existing_null() -> None:
+    with patch(
+        "secrets_fields.fields.SecretField.get_prep_value"
+    ) as mock_get_prep_value:
+        mock_get_prep_value.return_value = None
+        instance = models.ModelJSONStatic()
+        instance.secret = {"test": "123"}
+        instance.save()
+
+    instance = models.ModelJSONStatic.objects.first()
+    assert instance.secret is None
+
+
 @mock_aws
 @pytest.mark.django_db
 def test_model_text_field_secrets_manager() -> None:
@@ -225,12 +237,34 @@ def test_model_json_field_list_secrets_manager() -> None:
 
 @mock_aws
 @pytest.mark.django_db
+def test_model_json_field_mixed_secrets_manager_duplcate() -> None:
+    model = mixer.blend(
+        models.ModelJSONAWS,
+        secret={"test": "supersecret"},
+    )
+    assert model.secret == {"test": "supersecret"}
+
+    model = mixer.blend(
+        models.ModelJSONAWS,
+        secret='{"test": "supersecret"}',
+    )
+    assert model.secret == {"test": "supersecret"}
+
+
+@mock_aws
+@pytest.mark.django_db
 def test_model_json_field_mixed_secrets_manager() -> None:
     model = mixer.blend(
         models.ModelJSONAWS,
         secret={"test": "supersecret"},
     )
     assert model.secret == {"test": "supersecret"}
+
+    model = mixer.blend(
+        models.ModelJSONAWS,
+        secret='{"test": "supersecret1"}',
+    )
+    assert model.secret == {"test": "supersecret1"}
 
 
 @mock_aws

@@ -84,7 +84,7 @@ class SecretBase(Generic[T]):
                 settings, "DJANGO_SECRETS_FIELDS_MIGRATE", False
             ):
                 warnings.warn(
-                    "The field is not encrypted in the database, if this model is resaved this value will be enrypted. You can use `./manage.py migrate_encrypted` to migrate all models.",
+                    "The field does appear to be encrypted, if this model is resaved this value will be enrypted. You can use `./manage.py migrate_encrypted` to migrate all models.",
                     UserWarning,
                 )
                 return self.to_python(self.ciphertext)
