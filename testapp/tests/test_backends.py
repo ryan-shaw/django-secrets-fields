@@ -4,19 +4,19 @@ from secrets_fields.backends.encrypted import EncryptedBackend
 from django.core.exceptions import ImproperlyConfigured
 
 
-def test_encrypt_raises_not_implemented_error():
+def test_encrypt_raises_not_implemented_error() -> None:
     backend = BaseSecretsBackend({})
     with pytest.raises(NotImplementedError):
         backend.encrypt("plaintext")
 
 
-def test_decrypt_raises_not_implemented_error():
+def test_decrypt_raises_not_implemented_error() -> None:
     backend = BaseSecretsBackend({})
     with pytest.raises(NotImplementedError):
         backend.decrypt("ciphertext")
 
 
-def test_encrypted_no_key():
+def test_encrypted_no_key() -> None:
     backend = EncryptedBackend({})
     with pytest.raises(ImproperlyConfigured):
         backend.encrypt("plaintext")

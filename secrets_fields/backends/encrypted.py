@@ -1,6 +1,7 @@
 from cryptography import fernet
 from .backends import BaseSecretsBackend
 from django.core.exceptions import ImproperlyConfigured
+from secrets_fields.exceptions import DecryptionException
 
 
 class EncryptedBackend(BaseSecretsBackend):
@@ -30,8 +31,15 @@ class EncryptedBackend(BaseSecretsBackend):
         Args:
             ciphertext (str): ciphertext
 
+        Raises:
+            DecryptionException: if the ciphertext is invalid
+
         Returns:
             str: plaintext secret
         """
-        decrypted: bytes = self._crypter.decrypt(ciphertext.encode("utf-8"))
-        return decrypted.decode("utf-8")
+        try:
+            decrypted: bytes = self._crypter.decrypt(ciphertext.encode("utf-8"))
+        except fernet.InvalidToken as e:
+            raise DecryptionException(e)
+        else:
+            return decrypted.decode("utf-8")

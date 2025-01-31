@@ -12,6 +12,9 @@ class BaseSecretsBackend:
         Args:
             ciphertext (str): ciphertext
 
+        Raises:
+            DecryptionException: if the ciphertext is invalid
+
         Returns:
             str: plaintext
         """
