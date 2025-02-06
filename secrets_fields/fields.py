@@ -8,10 +8,12 @@ import django.db.models
 from .util import get_backend
 from secrets_fields.exceptions import DecryptionException
 from dataclasses import dataclass
-from typing import Any, TypeAlias, TypeVar, Type, cast, Generic
+from typing import Any, TypeVar, Type, cast, Generic
 from django.conf import settings
-
-JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+from django.db.models import Model
+from .types import JSON
+from .widgets import JSONWidget
+from django.forms import Field, ChoiceField
 
 
 TTL = 30
@@ -121,6 +123,20 @@ class SecretField(django.db.models.TextField, Generic[TF]):
         self.backend = backend
         super().__init__(*args, **kwargs)
 
+    def formfield(
+        self,
+        form_class: type[Field] | None = None,
+        choices_form_class: type[ChoiceField] | None = None,
+        **kwargs: Any,
+    ) -> Field | None:
+        defaults = {
+            "widget": JSONWidget,
+        }
+        defaults.update(kwargs)
+        return super().formfield(
+            form_class=form_class, choices_form_class=choices_form_class, **defaults
+        )
+
     def get_prep_value(self, value: TF | str | None) -> str | None:
         # if not self.secret_type we need to convert to self.secret_type and encrypt it
         if value is None:
@@ -167,3 +183,7 @@ class SecretJSONField(SecretField[SecretJSON]):
 
     def get_internal_type(self) -> str:
         return "TextField"
+
+    def value_from_object(self, obj: Model) -> str:
+        value = getattr(obj, self.attname)
+        return json.dumps(value)
